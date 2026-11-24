@@ -45,7 +45,7 @@ DIAS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
 FOTO_RUIM = re.compile(r"mono ?colou?r|multi ?colou?r|multi ?part|plate|thumb|print[_ ]?bed|_EN_",
                        re.IGNORECASE)
 NATALINO = re.compile(r"christmas|xmas|santa|nativity|holy family|reindeer|snow|wreath|evergreen|ornament|"
-                      r"gingerbread|elf|sleigh|jingle|nutcracker|natal|noel", re.IGNORECASE)
+                      r"gingerbread|elf|sleigh|jingle|nutcracker|natal|noel|tree|gift|topper|village|candy|bells?\b|holiday", re.IGNORECASE)
 SIMULAR = "--simular" in sys.argv
 FORCAR = "--forcar" in sys.argv  # ignora "fila cheia" (para testar)
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
