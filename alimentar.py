@@ -44,6 +44,8 @@ UA = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.3
 DIAS = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
 FOTO_RUIM = re.compile(r"mono ?colou?r|multi ?colou?r|multi ?part|plate|thumb|print[_ ]?bed|_EN_",
                        re.IGNORECASE)
+NATALINO = re.compile(r"christmas|xmas|santa|nativity|holy family|reindeer|snow|wreath|evergreen|ornament|"
+                      r"gingerbread|elf|sleigh|jingle|nutcracker|natal|noel", re.IGNORECASE)
 SIMULAR = "--simular" in sys.argv
 FORCAR = "--forcar" in sys.argv  # ignora "fila cheia" (para testar)
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
@@ -263,8 +265,12 @@ def main():
     adicionados = []
 
     for cand in candidatos:
-        if len(adicionados) >= quantos:
+        if len(adicionados) >= quantos or len(adicionados) >= len(datas):
             break
+        dia_previsto = datas[len(adicionados)]
+        if NATALINO.search(cand["nome_en"] + " " + cand["slug"]) and not (
+                dia_previsto.month == 11 or (dia_previsto.month == 12 and dia_previsto.day <= 20)):
+            continue  # peça de Natal fora de época
         log(f"- {cand['nome_en']} ({cand['downloads']} downloads, lançado {cand['lancamento']})")
         try:
             prod = dados_produto(cand["slug"])
