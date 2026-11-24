@@ -12,6 +12,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 concurrency:
   group: publicar-instagram
@@ -59,4 +60,12 @@ jobs:
             git commit -m "Publicação automática"
             git pull --rebase
             git push
+            echo "publicou=1" >> "$GITHUB_OUTPUT"
           fi
+        id: salvar
+
+      - name: Repor a fila com lançamentos da STLflix
+        if: steps.salvar.outputs.publicou == '1' && github.event.inputs.dry_run != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run alimentar.yml -f simular=false -f forcar=false

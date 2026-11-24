@@ -99,7 +99,7 @@ Se quiser outra foto no story, coloque um arquivo chamado `story_base.jpg` (ou `
 
 ## Fila automática com lançamentos da STLflix
 
-Toda **segunda-feira às 10h** o GitHub roda o `alimentar.py`. Se a fila tiver menos de **21 dias** de conteúdo, ele:
+Depois de **cada publicação** (e, de reserva, toda segunda às 10h) o GitHub roda o `alimentar.py`. Se a fila tiver menos de **21 dias** de conteúdo, ele:
 1. consulta os modelos mais baixados da STLflix nos últimos 10 e 30 dias e pega só os **lançamentos recentes** (a partir de 20/10/2026) que ainda não foram usados;
 2. baixa as fotos da galeria de cada produto (pula as fotos de mesa de impressão, peças separadas e versões monocolor);
 3. escreve a legenda no padrão da Vértices, sem preço, chamando no direct (e com a frase de Natal até 18/12);
