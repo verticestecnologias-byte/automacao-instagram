@@ -80,20 +80,38 @@ def mais_baixados():
     return sorted(vistos.values(), key=lambda x: -x["downloads"])
 
 
+PAINEL = "https://painel.stlflix.com/api/products"
+
+
+def limpar_descricao(html_txt):
+    desc = html.unescape(re.sub(r"<[^>]+>", " ", html_txt or ""))
+    desc = re.sub(r"\s+", " ", desc).strip()
+    return re.sub(r"^(DESCRI[ÇC][ÃA]O DO MODELO 3D|3D MODEL DESCRIPTION)\s*", "", desc, flags=re.I)
+
+
 def dados_produto(slug):
-    r = requests.get(f"{SITE}/pt-BR/product/{slug}", headers=UA, timeout=40)
-    r.raise_for_status()
-    m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', r.text, re.S)
-    if not m:
-        raise RuntimeError("página do produto sem dados")
-    pp = json.loads(m.group(1))["props"]["pageProps"]
+    """Página do produto (nome em português). Se o site bloquear, usa a API pública do catálogo (em inglês)."""
+    url = f"{SITE}/pt-BR/product/{slug}"
+    try:
+        r = requests.get(url, headers=UA, timeout=40)
+        r.raise_for_status()
+        m = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', r.text, re.S)
+        pp = json.loads(m.group(1))["props"]["pageProps"]
+        idioma = "pt"
+    except Exception:  # noqa: BLE001
+        r = requests.get(PAINEL, headers=UA, timeout=40, params={
+            "filters[slug][$eq]": slug, "populate[0]": "gallery", "populate[1]": "drop"})
+        r.raise_for_status()
+        dados = r.json().get("data") or []
+        if not dados:
+            raise RuntimeError("produto não encontrado no catálogo")
+        pp = dados[0]["attributes"]
+        idioma = "en"
     galeria = [g["attributes"]["url"] for g in ((pp.get("gallery") or {}).get("data") or [])
                if g.get("attributes", {}).get("url")]
-    desc = html.unescape(re.sub(r"<[^>]+>", " ", pp.get("description") or ""))
-    desc = re.sub(r"\s+", " ", desc).strip()
     drop = (((pp.get("drop") or {}).get("data") or {}).get("attributes") or {}).get("title", "")
-    return {"nome": pp.get("name") or slug, "descricao": desc, "galeria": galeria,
-            "drop": drop, "url": f"{SITE}/pt-BR/product/{slug}"}
+    return {"nome": pp.get("name") or slug, "descricao": limpar_descricao(pp.get("description")),
+            "galeria": galeria, "drop": drop, "url": url, "idioma": idioma}
 
 
 def foto_boa(img):
@@ -152,7 +170,7 @@ def legenda_claude(prod):
         "max_tokens": 1500,
         "system": REGRAS + ("\n\nExemplo de legenda aprovada:\n" + EXEMPLO if EXEMPLO else ""),
         "messages": [{"role": "user", "content":
-                      f"Produto: {prod['nome']}\nDescrição do fabricante: {prod['descricao'][:1500]}"}],
+                      f"Produto: {prod['nome']}\nDescrição do fabricante (pode estar em inglês; escreva tudo em português): {prod['descricao'][:1500]}"}],
     }
     r = requests.post("https://api.anthropic.com/v1/messages", json=corpo, timeout=90,
                       headers={"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01"})
@@ -164,7 +182,9 @@ def legenda_claude(prod):
 
 def legenda_modelo(prod):
     nome = prod["nome"]
-    frase = re.split(r"(?<=[.!?])\s", prod["descricao"])[0][:280] if prod["descricao"] else ""
+    frase = ""
+    if prod["descricao"] and prod.get("idioma") == "pt":
+        frase = re.split(r"(?<=[.!?])\s", prod["descricao"])[0][:280]
     legenda = (f"Novidade fresquinha saindo da impressora! ✨🖨️\n\n"
                f"Apresentamos {nome}. {frase}\n\n"
                f"Cada detalhe é impresso em 3D aqui na Vértices, com acabamento caprichado. 🏆\n\n"
