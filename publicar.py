@@ -206,8 +206,11 @@ def checar_fila(estado):
 
 
 def checar_token(estado):
-    if DRY_RUN or not TOKEN:
+    if DRY_RUN:
         return True
+    if not TOKEN or not IG_USER_ID:
+        log("ERRO: faltam os segredos IG_USER_ID e/ou IG_ACCESS_TOKEN no GitHub.")
+        return False
     try:
         conta = chamar("GET", IG_USER_ID, fields="username")
         log(f"token OK — conta @{conta.get('username')}")
