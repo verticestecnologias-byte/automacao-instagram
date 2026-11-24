@@ -1,0 +1,52 @@
+name: Relógio (dispara o robô na hora certa)
+
+# O agendamento do GitHub atrasa ou pula execuções. Este relógio espera
+# até o próximo post/story, dispara "Publicar no Instagram" e se reagenda.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"   # reserva: religa o relógio se ele parar
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: relogio
+  cancel-in-progress: false
+
+jobs:
+  relogio:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Esperar até a próxima publicação
+        id: espera
+        run: |
+          S=$(python publicar.py --proxima)
+          [ "$S" -lt 300 ] && S=300      # no mínimo 5 min, para não girar em falso
+          [ "$S" -gt 19800 ] && S=19800  # no máximo 5h30 por rodada
+          echo "Próxima publicação em $((S/60)) min"
+          sleep "$S"
+
+      - name: Disparar o robô
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git pull -q || true
+          if [ "$(python publicar.py --proxima)" -le 60 ]; then
+            gh workflow run publicar.yml -f dry_run=false
+            echo "Robô disparado"
+          fi
+
+      - name: Reagendar o relógio
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run relogio.yml

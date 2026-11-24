@@ -19,7 +19,7 @@ permissions:
   issues: write
 
 concurrency:
-  group: publicar-instagram
+  group: alimentar-fila
   cancel-in-progress: false
 
 jobs:

@@ -306,8 +306,31 @@ def agenda():
               f"{len(fotos(pasta))} foto(s)  {pasta.name[11:]}")
 
 
+def proxima():
+    """Segundos até o próximo post/story pendente (0 se já está na hora)."""
+    pub = ler_estado().get("publicados", {})
+    t = agora()
+    espera_story = timedelta(minutes=CONFIG.get("story_minutos_depois_do_post", 60))
+    eventos = []
+    for pasta in sorted(p for p in FILA.iterdir() if p.is_dir()):
+        dia = data_da_pasta(pasta)
+        if not dia:
+            continue
+        hp, hs = horarios(dia)
+        reg = pub.get(pasta.name, {})
+        if "post" not in reg:
+            eventos.append(hp)
+        elif "story" not in reg and (pasta / "story.jpg").exists():
+            eventos.append(max(hs, datetime.fromisoformat(reg["post_em"]) + espera_story))
+    if not eventos:
+        return 6 * 3600
+    return max(0, int((min(eventos) - t).total_seconds()))
+
+
 if __name__ == "__main__":
-    if "--agenda" in sys.argv:
+    if "--proxima" in sys.argv:
+        print(proxima())
+    elif "--agenda" in sys.argv:
         agenda()
     elif "--verificar" in sys.argv:
         est = ler_estado()
