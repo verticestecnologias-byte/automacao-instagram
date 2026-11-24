@@ -97,9 +97,25 @@ Pronto. A partir daí ele roda sozinho.
 
 Se quiser outra foto no story, coloque um arquivo chamado `story_base.jpg` (ou `.png`) na pasta.
 
+## Fila automática com lançamentos da STLflix
+
+Toda **segunda-feira às 10h** o GitHub roda o `alimentar.py`. Se a fila tiver menos de **21 dias** de conteúdo, ele:
+1. consulta os modelos mais baixados da STLflix nos últimos 10 e 30 dias e pega só os **lançamentos recentes** (a partir de 20/10/2026) que ainda não foram usados;
+2. baixa as fotos da galeria de cada produto (pula as fotos de mesa de impressão, peças separadas e versões monocolor);
+3. escreve a legenda no padrão da Vértices, sem preço, chamando no direct (e com a frase de Natal até 18/12);
+4. marca os próximos dias livres (terça, quarta, quinta ou domingo) e cria as pastas em `fila/`;
+5. **abre um aviso no seu e-mail** com a lista do que entrou. Se não gostar de algum, apague a pasta dele antes da data.
+
+`stlflix_usados.json` guarda os produtos que já foram usados, para nunca repetir.
+
+**Legendas melhores (opcional):** crie o segredo `ANTHROPIC_API_KEY` (uma chave do https://console.anthropic.com) em *Settings → Secrets and variables → Actions*. Com ela, o Claude escreve cada legenda a partir da descrição do produto, imitando `exemplo_legenda.txt`. Sem ela, o robô usa uma legenda-modelo simples.
+
+**Testar:** Actions → *Alimentar fila com lançamentos da STLflix* → *Run workflow* → marque "Só simular" e "Buscar mesmo com a fila cheia". Mostra o que seria adicionado, sem mudar nada.
+
 ## Comandos úteis (no computador, com Python)
 ```
 pip install -r requirements.txt
 python preparar.py              # prepara as fotos e os stories da fila
 python publicar.py --agenda     # mostra a agenda
+python alimentar.py --simular   # mostra quais lançamentos entrariam na fila
 ```

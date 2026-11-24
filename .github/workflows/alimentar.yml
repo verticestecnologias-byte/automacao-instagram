@@ -1,0 +1,58 @@
+name: Alimentar fila com lançamentos da STLflix
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"   # toda segunda, 10h de Brasília
+  workflow_dispatch:
+    inputs:
+      simular:
+        description: "Só simular (não cria nada na fila)"
+        type: boolean
+        default: true
+      forcar:
+        description: "Buscar mesmo com a fila cheia"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: publicar-instagram
+  cancel-in-progress: false
+
+jobs:
+  alimentar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+
+      - name: Buscar lançamentos e montar posts
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.simular }}" = "true" ]; then ARGS="$ARGS --simular"; fi
+          if [ "${{ inputs.forcar }}" = "true" ]; then ARGS="$ARGS --forcar"; fi
+          python alimentar.py $ARGS
+
+      - name: Preparar fotos e stories
+        if: ${{ inputs.simular != true }}
+        run: python preparar.py
+
+      - name: Salvar na fila
+        if: ${{ inputs.simular != true }}
+        run: |
+          git config user.name "robo-instagram"
+          git config user.email "robo-instagram@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          git commit -m "Alimentar fila com lançamentos da STLflix"
+          git pull --rebase
+          git push

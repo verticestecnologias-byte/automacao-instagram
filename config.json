@@ -10,5 +10,16 @@
   },
   "intervalo_minimo_horas": 3,
   "story_minutos_depois_do_post": 60,
-  "avisar_quando_faltar_dias": 10
+  "avisar_quando_faltar_dias": 10,
+  "alimentador": {
+    "dias_postagem": ["ter", "qua", "qui", "dom"],
+    "manter_fila_dias": 21,
+    "antecedencia_minima_dias": 3,
+    "max_por_rodada": 6,
+    "lancamento_desde": "2026-10-20",
+    "lancamento_max_dias": 60,
+    "min_fotos": 2,
+    "max_fotos": 7,
+    "modelo": "claude-haiku-4-5-20251001"
+  }
 }
