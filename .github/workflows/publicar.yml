@@ -23,6 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # sempre a versão mais nova (com o registro do que já saiu)
 
       - uses: actions/setup-python@v5
         with:
@@ -45,7 +47,9 @@ jobs:
           fi
 
       - name: Publicar o que estiver na hora
-        run: python publicar.py
+        run: |
+          git pull -q --rebase   # pega o registro mais recente, para nunca publicar duas vezes
+          python publicar.py
         env:
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
           IG_ACCESS_TOKEN: ${{ secrets.IG_ACCESS_TOKEN }}
